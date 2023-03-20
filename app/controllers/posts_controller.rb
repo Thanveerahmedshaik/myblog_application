@@ -1,13 +1,16 @@
 class PostsController < ApplicationController
   before_action :set_post, only: %i[ show edit update destroy ]
-
+  before_action :authenticate_user!, except: %i[show index]
   # GET /posts or /posts.json
   def index
-    @posts = Post.all
+    @posts = Post.all.order(created_at: :desc)
   end
 
   # GET /posts/1 or /posts/1.json
   def show
+    @post = Post.find(params[:id])
+    @post.views ||= 0 # initialize views to 0 if it's nil
+    @post.update(views: @post.views + 1)
   end
 
   # GET /posts/new
@@ -19,9 +22,10 @@ class PostsController < ApplicationController
   def edit
   end
 
-  # POST /posts or /posts.json
+  # POST /posts or /posts.json/authenticate_user makes sure that user is signed in,we cannot come to create unless signedin
   def create
     @post = Post.new(post_params)
+    @post.user = current_user
 
     respond_to do |format|
       if @post.save
@@ -63,7 +67,7 @@ class PostsController < ApplicationController
       @post = Post.find(params[:id])
     end
 
-    # Only allow a list of trusted parameters through.
+    # Only allow a list of trusted parameters through T wo things user can input.
     def post_params
       params.require(:post).permit(:title, :body)
     end
